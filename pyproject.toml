@@ -1,0 +1,37 @@
+# ==============================================================================
+# Control Valve Sizer — Project Configuration
+# ==============================================================================
+
+[tool.pytest.ini_options]
+# Critical for CI: adds project root to sys.path so
+# "from backend.xxx import" resolves correctly everywhere.
+pythonpath = ["."]
+testpaths  = ["tests"]
+addopts    = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+]
+markers = [
+    "integration: marks slow integration tests",
+    "steam: marks tests requiring the iapws package",
+]
+
+[tool.ruff]
+line-length    = 100
+target-version = "py311"
+select         = ["E", "F", "W", "I"]
+ignore         = ["E501"]
+
+[tool.ruff.isort]
+known-first-party = ["backend", "frontend"]
+
+[tool.black]
+line-length    = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version         = "3.11"
+warn_return_any        = true
+warn_unused_configs    = true
+ignore_missing_imports = true

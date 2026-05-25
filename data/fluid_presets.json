@@ -1,0 +1,255 @@
+{
+    "_metadata": {
+      "description": "Common process fluid properties for quick-select in the UI. All values are approximate reference values; use actual laboratory or process data for final design.",
+      "sources": ["Perry's Chemical Engineers Handbook", "NIST WebBook", "IAPWS-IF97 (steam/water)"],
+      "units": {
+        "Pc_bar": "Critical pressure [bar absolute]",
+        "Tc_K":   "Critical temperature [K]",
+        "M":      "Molecular weight [kg/kmol]",
+        "gamma":  "Isentropic exponent Cp/Cv [-]",
+        "Gf":     "Specific gravity relative to water at 15°C [-]",
+        "Pv_bar": "Vapour pressure at reference temperature [bar absolute]",
+        "mu_cP":  "Dynamic viscosity [cP = mPa·s]"
+      }
+    },
+    "liquid_presets": [
+      {
+        "id": "water",
+        "name": "Water",
+        "phase": "liquid",
+        "Gf": 1.000,
+        "Pc_bar": 220.9,
+        "Tc_K": 647.1,
+        "mu_cP_at_20C": 1.002,
+        "mu_cP_at_60C": 0.467,
+        "Pv_data": [
+          {"T_C": 0,   "Pv_bar": 0.006},
+          {"T_C": 20,  "Pv_bar": 0.023},
+          {"T_C": 40,  "Pv_bar": 0.074},
+          {"T_C": 60,  "Pv_bar": 0.199},
+          {"T_C": 80,  "Pv_bar": 0.474},
+          {"T_C": 100, "Pv_bar": 1.013}
+        ],
+        "notes": "Use IAPWS-IF97 for precise properties"
+      },
+      {
+        "id": "propane",
+        "name": "Propane (C3H8)",
+        "phase": "liquid",
+        "Gf": 0.507,
+        "Pc_bar": 42.48,
+        "Tc_K": 369.8,
+        "mu_cP_at_20C": 0.110,
+        "Pv_data": [
+          {"T_C": -20, "Pv_bar": 2.44},
+          {"T_C": 0,   "Pv_bar": 4.74},
+          {"T_C": 20,  "Pv_bar": 8.35},
+          {"T_C": 40,  "Pv_bar": 13.69},
+          {"T_C": 60,  "Pv_bar": 21.20}
+        ],
+        "notes": "High vapour pressure; flashing risk; use anti-static trim"
+      },
+      {
+        "id": "ammonia",
+        "name": "Ammonia (NH3)",
+        "phase": "liquid",
+        "Gf": 0.682,
+        "Pc_bar": 113.5,
+        "Tc_K": 405.6,
+        "mu_cP_at_20C": 0.141,
+        "Pv_data": [
+          {"T_C": -20, "Pv_bar": 2.34},
+          {"T_C": 0,   "Pv_bar": 4.30},
+          {"T_C": 20,  "Pv_bar": 8.57},
+          {"T_C": 40,  "Pv_bar": 15.54}
+        ],
+        "notes": "Toxic; seal selection critical; refrigeration grade"
+      },
+      {
+        "id": "hfo_heavy_fuel_oil",
+        "name": "Heavy Fuel Oil (HFO)",
+        "phase": "liquid",
+        "Gf": 0.970,
+        "Pc_bar": 20.0,
+        "Tc_K": 720.0,
+        "mu_cP_at_50C": 180.0,
+        "mu_cP_at_80C": 40.0,
+        "Pv_data": [
+          {"T_C": 50,  "Pv_bar": 0.001},
+          {"T_C": 80,  "Pv_bar": 0.002},
+          {"T_C": 120, "Pv_bar": 0.01}
+        ],
+        "notes": "High viscosity; Reynolds correction required; heat trace valve"
+      },
+      {
+        "id": "light_crude",
+        "name": "Light Crude Oil",
+        "phase": "liquid",
+        "Gf": 0.855,
+        "Pc_bar": 25.0,
+        "Tc_K": 650.0,
+        "mu_cP_at_20C": 5.0,
+        "Pv_data": [
+          {"T_C": 20,  "Pv_bar": 0.15},
+          {"T_C": 40,  "Pv_bar": 0.35}
+        ],
+        "notes": "API 40-45; flashing possible at high temperature"
+      },
+      {
+        "id": "glycol_50pct",
+        "name": "50% Ethylene Glycol/Water",
+        "phase": "liquid",
+        "Gf": 1.070,
+        "Pc_bar": 100.0,
+        "Tc_K": 600.0,
+        "mu_cP_at_20C": 5.5,
+        "mu_cP_at_0C": 12.0,
+        "Pv_data": [
+          {"T_C": 20,  "Pv_bar": 0.015},
+          {"T_C": 60,  "Pv_bar": 0.09}
+        ],
+        "notes": "Antifreeze; viscous at low temperature; Reynolds correction likely needed"
+      },
+      {
+        "id": "lp_naphtha",
+        "name": "Light Petroleum Naphtha",
+        "phase": "liquid",
+        "Gf": 0.705,
+        "Pc_bar": 32.0,
+        "Tc_K": 460.0,
+        "mu_cP_at_20C": 0.42,
+        "Pv_data": [
+          {"T_C": 20,  "Pv_bar": 0.38},
+          {"T_C": 40,  "Pv_bar": 0.70}
+        ],
+        "notes": "High vapour pressure; fire hazard; earthed valve body required"
+      }
+    ],
+    "gas_presets": [
+      {
+        "id": "air",
+        "name": "Air (dry)",
+        "phase": "gas",
+        "M": 28.967,
+        "gamma": 1.400,
+        "Z_at_std": 1.000,
+        "notes": "Reference gas for N-factor derivation; Fγ = 1.000"
+      },
+      {
+        "id": "nitrogen",
+        "name": "Nitrogen (N2)",
+        "phase": "gas",
+        "M": 28.014,
+        "gamma": 1.400,
+        "Z_at_std": 1.000,
+        "notes": "Near-identical to air for sizing purposes; use for blanketing"
+      },
+      {
+        "id": "natural_gas_methane",
+        "name": "Natural Gas (Methane dominant, ~97% CH4)",
+        "phase": "gas",
+        "M": 16.54,
+        "gamma": 1.310,
+        "Z_typical": 0.97,
+        "notes": "Composition varies; use actual gas analysis for precise M and Z; Fγ = 0.936"
+      },
+      {
+        "id": "methane",
+        "name": "Methane (CH4) — Pure",
+        "phase": "gas",
+        "M": 16.043,
+        "gamma": 1.306,
+        "Z_at_std": 1.000,
+        "Pc_bar": 46.1,
+        "Tc_K": 190.6,
+        "notes": "Use Hall-Yarborough or Pitzer for Z at high pressure (>50 bar)"
+      },
+      {
+        "id": "hydrogen",
+        "name": "Hydrogen (H2)",
+        "phase": "gas",
+        "M": 2.016,
+        "gamma": 1.407,
+        "Z_at_std": 1.000,
+        "Pc_bar": 13.0,
+        "Tc_K": 33.1,
+        "notes": "Lightest gas; very high sonic velocity; Z correction significant at > 100 bar; H2 embrittlement risk"
+      },
+      {
+        "id": "carbon_dioxide",
+        "name": "Carbon Dioxide (CO2)",
+        "phase": "gas",
+        "M": 44.010,
+        "gamma": 1.289,
+        "Z_at_std": 0.995,
+        "Pc_bar": 73.8,
+        "Tc_K": 304.2,
+        "notes": "Near-critical behaviour at typical operating conditions; Z can deviate significantly; Fγ = 0.921"
+      },
+      {
+        "id": "oxygen",
+        "name": "Oxygen (O2)",
+        "phase": "gas",
+        "M": 31.999,
+        "gamma": 1.395,
+        "Z_at_std": 1.000,
+        "notes": "Fire/explosion hazard; oxygen-clean valve required; no hydrocarbon lubricants"
+      },
+      {
+        "id": "propane_gas",
+        "name": "Propane (C3H8) — Vapour",
+        "phase": "gas",
+        "M": 44.096,
+        "gamma": 1.130,
+        "Z_at_std": 0.994,
+        "Pc_bar": 42.48,
+        "Tc_K": 369.8,
+        "notes": "Fγ = 0.807; low isentropic exponent — significant Y correction at high ΔP"
+      },
+      {
+        "id": "steam_vapour",
+        "name": "Steam (H2O vapour) — Use STEAM phase instead",
+        "phase": "gas",
+        "M": 18.015,
+        "gamma": 1.300,
+        "Z_at_std": 1.000,
+        "notes": "Use FluidPhase = STEAM for accurate IF97 property lookup. This entry is for reference only."
+      }
+    ],
+    "steam_presets": [
+      {
+        "id": "steam_saturated_low",
+        "name": "Saturated Steam — Low Pressure (2–5 bar)",
+        "phase": "steam",
+        "P_range_bar": [2, 5],
+        "gamma_approx": 1.135,
+        "notes": "Use IF97 for exact specific volume; Fγ ≈ 0.811"
+      },
+      {
+        "id": "steam_saturated_medium",
+        "name": "Saturated Steam — Medium Pressure (5–20 bar)",
+        "phase": "steam",
+        "P_range_bar": [5, 20],
+        "gamma_approx": 1.135,
+        "notes": "Common process steam; T_sat from IF97"
+      },
+      {
+        "id": "steam_superheated_medium",
+        "name": "Superheated Steam — Medium Pressure (10–40 bar, 250–400°C)",
+        "phase": "steam",
+        "P_range_bar": [10, 40],
+        "T_range_C": [250, 400],
+        "gamma_approx": 1.300,
+        "notes": "γ varies with T and P; always use IF97. Fγ ≈ 0.929"
+      },
+      {
+        "id": "steam_superheated_high",
+        "name": "Superheated Steam — High Pressure (40–100 bar, 400–540°C)",
+        "phase": "steam",
+        "P_range_bar": [40, 100],
+        "T_range_C": [400, 540],
+        "gamma_approx": 1.280,
+        "notes": "Power generation steam; Z correction may be needed near saturation line"
+      }
+    ]
+  }

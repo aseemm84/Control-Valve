@@ -1,0 +1,156 @@
+{
+    "_metadata": {
+      "standard": "ASME B36.10M-2018",
+      "description": "Pipe schedule dimensions for carbon steel pipe (NPS 0.5 to NPS 24)",
+      "units": {
+        "od_mm": "Outside diameter [mm]",
+        "id_mm": "Inside diameter [mm]",
+        "t_mm":  "Wall thickness [mm]",
+        "dn_mm": "Nominal bore DN [mm]",
+        "nps_in": "Nominal pipe size NPS [inches]"
+      },
+      "schedules_available": ["SCH10", "SCH40", "SCH80", "SCH160", "XXS"]
+    },
+    "pipe_sizes": [
+      {
+        "nps_in": "0.5",  "dn_mm": 15,  "od_mm": 21.3,
+        "schedules": {
+          "SCH10":  {"t_mm": 1.65, "id_mm": 17.10},
+          "SCH40":  {"t_mm": 2.77, "id_mm": 15.76},
+          "SCH80":  {"t_mm": 3.73, "id_mm": 13.84},
+          "SCH160": {"t_mm": 4.78, "id_mm": 11.74},
+          "XXS":    {"t_mm": 7.47, "id_mm": 6.36}
+        }
+      },
+      {
+        "nps_in": "0.75", "dn_mm": 20,  "od_mm": 26.7,
+        "schedules": {
+          "SCH10":  {"t_mm": 1.65, "id_mm": 23.40},
+          "SCH40":  {"t_mm": 2.87, "id_mm": 20.96},
+          "SCH80":  {"t_mm": 3.91, "id_mm": 18.88},
+          "SCH160": {"t_mm": 5.56, "id_mm": 15.58},
+          "XXS":    {"t_mm": 7.82, "id_mm": 11.06}
+        }
+      },
+      {
+        "nps_in": "1",    "dn_mm": 25,  "od_mm": 33.4,
+        "schedules": {
+          "SCH10":  {"t_mm": 1.65, "id_mm": 30.10},
+          "SCH40":  {"t_mm": 3.38, "id_mm": 26.64},
+          "SCH80":  {"t_mm": 4.55, "id_mm": 24.30},
+          "SCH160": {"t_mm": 6.35, "id_mm": 20.70},
+          "XXS":    {"t_mm": 9.09, "id_mm": 15.22}
+        }
+      },
+      {
+        "nps_in": "1.5",  "dn_mm": 40,  "od_mm": 48.3,
+        "schedules": {
+          "SCH10":  {"t_mm": 2.77, "id_mm": 42.76},
+          "SCH40":  {"t_mm": 3.68, "id_mm": 40.94},
+          "SCH80":  {"t_mm": 5.08, "id_mm": 38.14},
+          "SCH160": {"t_mm": 7.14, "id_mm": 34.02},
+          "XXS":    {"t_mm": 10.16,"id_mm": 27.98}
+        }
+      },
+      {
+        "nps_in": "2",    "dn_mm": 50,  "od_mm": 60.3,
+        "schedules": {
+          "SCH10":  {"t_mm": 2.77, "id_mm": 54.76},
+          "SCH40":  {"t_mm": 3.91, "id_mm": 52.48},
+          "SCH80":  {"t_mm": 5.54, "id_mm": 49.22},
+          "SCH160": {"t_mm": 8.74, "id_mm": 42.82},
+          "XXS":    {"t_mm": 11.07,"id_mm": 38.16}
+        }
+      },
+      {
+        "nps_in": "3",    "dn_mm": 80,  "od_mm": 88.9,
+        "schedules": {
+          "SCH10":  {"t_mm": 3.05, "id_mm": 82.80},
+          "SCH40":  {"t_mm": 5.49, "id_mm": 77.92},
+          "SCH80":  {"t_mm": 7.62, "id_mm": 73.66},
+          "SCH160": {"t_mm": 11.13,"id_mm": 66.64},
+          "XXS":    {"t_mm": 15.24,"id_mm": 58.42}
+        }
+      },
+      {
+        "nps_in": "4",    "dn_mm": 100, "od_mm": 114.3,
+        "schedules": {
+          "SCH10":  {"t_mm": 3.05, "id_mm": 108.20},
+          "SCH40":  {"t_mm": 6.02, "id_mm": 102.26},
+          "SCH80":  {"t_mm": 8.56, "id_mm": 97.18},
+          "SCH160": {"t_mm": 13.49,"id_mm": 87.32},
+          "XXS":    {"t_mm": 17.12,"id_mm": 80.06}
+        }
+      },
+      {
+        "nps_in": "6",    "dn_mm": 150, "od_mm": 168.3,
+        "schedules": {
+          "SCH10":  {"t_mm": 3.40, "id_mm": 161.50},
+          "SCH40":  {"t_mm": 7.11, "id_mm": 154.08},
+          "SCH80":  {"t_mm": 10.97,"id_mm": 146.36},
+          "SCH160": {"t_mm": 18.26,"id_mm": 131.78},
+          "XXS":    {"t_mm": 21.95,"id_mm": 124.40}
+        }
+      },
+      {
+        "nps_in": "8",    "dn_mm": 200, "od_mm": 219.1,
+        "schedules": {
+          "SCH10":  {"t_mm": 3.76, "id_mm": 211.58},
+          "SCH40":  {"t_mm": 8.18, "id_mm": 202.74},
+          "SCH80":  {"t_mm": 12.70,"id_mm": 193.70},
+          "SCH160": {"t_mm": 23.01,"id_mm": 173.08},
+          "XXS":    {"t_mm": 22.23,"id_mm": 174.64}
+        }
+      },
+      {
+        "nps_in": "10",   "dn_mm": 250, "od_mm": 273.1,
+        "schedules": {
+          "SCH10":  {"t_mm": 4.19, "id_mm": 264.72},
+          "SCH40":  {"t_mm": 9.27, "id_mm": 254.56},
+          "SCH80":  {"t_mm": 15.09,"id_mm": 242.92},
+          "SCH160": {"t_mm": 28.58,"id_mm": 215.94},
+          "XXS":    {"t_mm": 25.40,"id_mm": 222.30}
+        }
+      },
+      {
+        "nps_in": "12",   "dn_mm": 300, "od_mm": 323.9,
+        "schedules": {
+          "SCH10":  {"t_mm": 4.57, "id_mm": 314.76},
+          "SCH40":  {"t_mm": 9.53, "id_mm": 304.84},
+          "SCH80":  {"t_mm": 17.48,"id_mm": 288.94},
+          "SCH160": {"t_mm": 33.32,"id_mm": 257.26},
+          "XXS":    {"t_mm": 25.40,"id_mm": 273.10}
+        }
+      },
+      {
+        "nps_in": "16",   "dn_mm": 400, "od_mm": 406.4,
+        "schedules": {
+          "SCH10":  {"t_mm": 4.78, "id_mm": 396.84},
+          "SCH40":  {"t_mm": 9.53, "id_mm": 387.34},
+          "SCH80":  {"t_mm": 16.66,"id_mm": 373.08},
+          "SCH160": {"t_mm": 36.53,"id_mm": 333.34},
+          "XXS":    {"t_mm": 25.40,"id_mm": 355.60}
+        }
+      },
+      {
+        "nps_in": "20",   "dn_mm": 500, "od_mm": 508.0,
+        "schedules": {
+          "SCH10":  {"t_mm": 6.35, "id_mm": 495.30},
+          "SCH40":  {"t_mm": 9.53, "id_mm": 488.94},
+          "SCH80":  {"t_mm": 19.05,"id_mm": 469.90},
+          "SCH160": {"t_mm": 44.45,"id_mm": 419.10},
+          "XXS":    {"t_mm": 25.40,"id_mm": 457.20}
+        }
+      },
+      {
+        "nps_in": "24",   "dn_mm": 600, "od_mm": 609.6,
+        "schedules": {
+          "SCH10":  {"t_mm": 6.35, "id_mm": 596.90},
+          "SCH40":  {"t_mm": 9.53, "id_mm": 590.54},
+          "SCH80":  {"t_mm": 22.23,"id_mm": 565.14},
+          "SCH160": {"t_mm": 59.54,"id_mm": 490.52},
+          "XXS":    {"t_mm": 25.40,"id_mm": 558.80}
+        }
+      }
+    ]
+  }

@@ -1,0 +1,136 @@
+{
+    "_metadata": {
+      "standard": "IEC 60534-2-3:2015, IEC 60534-8-3:2011",
+      "description": "Default valve hydraulic and acoustic coefficients by trim type. Values are typical/representative; always use manufacturer data for final design.",
+      "fields": {
+        "FL":   "Liquid pressure recovery factor [-] (IEC 60534-2-1)",
+        "xT":   "Pressure differential ratio factor for gas at choked flow [-]",
+        "Fd":   "Valve style modifier for aerodynamic noise [-] (IEC 60534-8-3)",
+        "characteristic": "Inherent flow characteristic curve",
+        "rangeability": "Typical inherent rangeability [-]",
+        "trim_type": "Key used to select acoustic efficiency constants"
+      }
+    },
+    "valve_presets": [
+      {
+        "id": "globe_single_port",
+        "name": "Globe Valve — Single-Port",
+        "FL": 0.90,
+        "xT": 0.72,
+        "Fd": 1.00,
+        "characteristic": "equal_percentage",
+        "rangeability": 50,
+        "trim_type": "globe_single",
+        "pressure_class_typical": "Class150 – Class2500",
+        "service_notes": "General purpose liquid and gas; best pressure drop capability; avoid severe cavitation without anti-cavitation trim"
+      },
+      {
+        "id": "globe_cage_balanced",
+        "name": "Globe Valve — Cage-Guided, Balanced",
+        "FL": 0.85,
+        "xT": 0.68,
+        "Fd": 0.42,
+        "characteristic": "equal_percentage",
+        "rangeability": 50,
+        "trim_type": "globe_cage",
+        "pressure_class_typical": "Class150 – Class1500",
+        "service_notes": "Lower actuator thrust required; good rangeability; multi-hole cage reduces aerodynamic noise"
+      },
+      {
+        "id": "globe_double_port",
+        "name": "Globe Valve — Double-Port",
+        "FL": 0.80,
+        "xT": 0.65,
+        "Fd": 0.70,
+        "characteristic": "linear",
+        "rangeability": 30,
+        "trim_type": "globe_cage",
+        "pressure_class_typical": "Class150 – Class600",
+        "service_notes": "Higher capacity; lower seating force; not suitable for tight shutoff"
+      },
+      {
+        "id": "ball_full_bore",
+        "name": "Ball Valve — Full-Bore (Rotary)",
+        "FL": 0.55,
+        "xT": 0.20,
+        "Fd": 0.98,
+        "characteristic": "quick_opening",
+        "rangeability": 10,
+        "trim_type": "ball_v_port",
+        "pressure_class_typical": "Class150 – Class600",
+        "service_notes": "Minimum pressure drop; excellent for on-off; poor control characteristics; not for throttling"
+      },
+      {
+        "id": "ball_v_port",
+        "name": "Ball Valve — V-Port (Rotary)",
+        "FL": 0.60,
+        "xT": 0.35,
+        "Fd": 0.70,
+        "characteristic": "equal_percentage",
+        "rangeability": 300,
+        "trim_type": "ball_v_port",
+        "pressure_class_typical": "Class150 – Class600",
+        "service_notes": "High rangeability; good for liquids with solids; V-port gives characterised flow"
+      },
+      {
+        "id": "butterfly_conventional",
+        "name": "Butterfly Valve — Conventional (Concentric)",
+        "FL": 0.55,
+        "xT": 0.35,
+        "Fd": 0.57,
+        "characteristic": "equal_percentage",
+        "rangeability": 20,
+        "trim_type": "butterfly",
+        "pressure_class_typical": "Class150 – Class300",
+        "service_notes": "Low cost; high Cv; limited controllability; avoid < 15° and > 70° opening"
+      },
+      {
+        "id": "butterfly_high_perf",
+        "name": "Butterfly Valve — High Performance (Double-Offset)",
+        "FL": 0.68,
+        "xT": 0.50,
+        "Fd": 0.42,
+        "characteristic": "equal_percentage",
+        "rangeability": 50,
+        "trim_type": "butterfly",
+        "pressure_class_typical": "Class150 – Class600",
+        "service_notes": "Better seating and control than conventional; reduced hysteresis; suitable for modulating service"
+      },
+      {
+        "id": "eccentric_rotary_plug",
+        "name": "Rotary Valve — Eccentric Plug",
+        "FL": 0.77,
+        "xT": 0.54,
+        "Fd": 0.44,
+        "characteristic": "equal_percentage",
+        "rangeability": 50,
+        "trim_type": "eccentric_rotary",
+        "pressure_class_typical": "Class150 – Class600",
+        "service_notes": "Good for slurries and fibrous media; cam-guided plug reduces wear"
+      },
+      {
+        "id": "needle_valve",
+        "name": "Needle Valve — Low-Flow Precision",
+        "FL": 0.95,
+        "xT": 0.78,
+        "Fd": 1.00,
+        "characteristic": "linear",
+        "rangeability": 100,
+        "trim_type": "globe_single",
+        "pressure_class_typical": "Class150 – Class2500",
+        "service_notes": "Precise low-flow control; high FL; use for analytical and metering applications"
+      },
+      {
+        "id": "anti_cavitation_multi_stage",
+        "name": "Globe Valve — Anti-Cavitation Multi-Stage Trim",
+        "FL": 0.85,
+        "xT": 0.65,
+        "Fd": 0.10,
+        "characteristic": "equal_percentage",
+        "rangeability": 50,
+        "trim_type": "globe_cage",
+        "pressure_class_typical": "Class300 – Class2500",
+        "service_notes": "Multi-stage pressure reduction; eliminates cavitation by staged ΔP; required when σ < 1/FL²"
+      }
+    ]
+  }

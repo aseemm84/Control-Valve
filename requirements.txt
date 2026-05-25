@@ -1,0 +1,31 @@
+# ==============================================================================
+# Control Valve Sizer — Production Requirements
+# Exact pins for reproducible Streamlit Community Cloud builds.
+# Python 3.11 | Apple Silicon (arm64) compatible | Last verified 2024-12
+#
+# All packages below have native arm64 wheels available.
+# No Rosetta 2 translation required on M1/M2/M3 Macs.
+# ==============================================================================
+
+# ── Web Application Framework ──────────────────────────────────────────────────
+streamlit==1.35.0
+
+# ── Data Validation & Type Safety ─────────────────────────────────────────────
+pydantic==2.7.1
+
+# ── Numerical Computing (native arm64 wheels) ──────────────────────────────────
+numpy==1.26.4
+scipy==1.13.0
+
+# ── Data Handling ──────────────────────────────────────────────────────────────
+pandas==2.2.2
+
+# ── Interactive Visualisation ──────────────────────────────────────────────────
+plotly==5.22.0
+
+# ── Steam / Water Thermodynamic Properties (IAPWS-IF97, pure Python) ──────────
+iapws==1.5.2
+
+# ── Report Generation (pure Python, no system dependencies) ───────────────────
+fpdf2==2.7.9
+openpyxl==3.1.4
