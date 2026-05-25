@@ -1,3 +1,1 @@
-# System-level apt packages for Streamlit Community Cloud (Ubuntu 22.04 LTS).
-# All our dependencies are pure Python or use pre-installed system libs.
-# No additional packages required.
+
