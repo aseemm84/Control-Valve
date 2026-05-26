@@ -8,24 +8,24 @@
 # ==============================================================================
 
 # ── Web Application Framework ──────────────────────────────────────────────────
-streamlit==1.35.0
+streamlit
 
 # ── Data Validation & Type Safety ─────────────────────────────────────────────
-pydantic==2.7.1
+pydantic
 
 # ── Numerical Computing (native arm64 wheels) ──────────────────────────────────
-numpy==1.26.4
-scipy==1.13.0
+numpy
+scipy
 
 # ── Data Handling ──────────────────────────────────────────────────────────────
-pandas==2.2.2
+pandas
 
 # ── Interactive Visualisation ──────────────────────────────────────────────────
-plotly==5.22.0
+plotly
 
 # ── Steam / Water Thermodynamic Properties (IAPWS-IF97, pure Python) ──────────
-iapws==1.5.2
+iapws
 
 # ── Report Generation (pure Python, no system dependencies) ───────────────────
-fpdf2==2.7.9
-openpyxl==3.1.4
+fpdf2
+openpyxl
