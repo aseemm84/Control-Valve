@@ -5,7 +5,6 @@ Builds downloadable engineering reports from a SizingResult.
 Returns BytesIO objects consumed by st.download_button().
 """
 
-"""
 
 from __future__ import annotations
 
