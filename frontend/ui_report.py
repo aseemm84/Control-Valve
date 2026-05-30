@@ -347,7 +347,7 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
                 new_y="NEXT",
             )
 
-    return pdf.output()
+    return bytes(pdf.output())
 
 
 # ---------------------------------------------------------------------------
