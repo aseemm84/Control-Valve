@@ -13,7 +13,7 @@ from typing import Optional
 
 import streamlit as st
 
-from backend.models import SizingResult
+from backend.models import FluidPhase, SizingResult
 
 
 # ---------------------------------------------------------------------------
@@ -21,72 +21,314 @@ from backend.models import SizingResult
 # ---------------------------------------------------------------------------
 
 def _pdf_safe(text: str) -> str:
-    """Replace Unicode characters outside Latin-1 with ASCII equivalents.
-
-    fpdf2 built-in fonts use Latin-1 encoding. Characters above U+00FF
-    raise a runtime error. This function converts them to engineering ASCII.
-    """
+    """Replace Unicode chars outside Latin-1 with ASCII engineering equivalents."""
     if not isinstance(text, str):
         text = str(text)
 
     replacements = {
-        "\u2014": "-",      # em dash
-        "\u2013": "-",      # en dash
-        "\u2212": "-",      # minus sign
-        "\u0394": "Delta",  # Delta
-        "\u03c1": "rho",    # rho
-        "\u03c3": "sigma",  # sigma
-        "\u03b7": "eta",    # eta
-        "\u03b3": "gamma",  # gamma
-        "\u03bc": "mu",     # mu
-        "\u03bd": "nu",     # nu
-        "\u03c6": "phi",    # phi
-        "\u03c0": "pi",     # pi
-        "\u03b1": "alpha",  # alpha
-        "\u03b2": "beta",   # beta
-        "\u03b5": "eps",    # epsilon
-        "\u03ba": "kappa",  # kappa
-        "\u03c9": "omega",  # omega
-        "\u03a9": "Omega",  # Omega
-        "\u03a3": "Sigma",  # Sigma
-        "\u2080": "0",      # subscript 0
-        "\u2081": "1",      # subscript 1
-        "\u2082": "2",      # subscript 2
-        "\u2083": "3",      # subscript 3
-        "\u00b2": "2",      # superscript 2
-        "\u00b3": "3",      # superscript 3
-        "\u00d7": "x",      # multiplication sign
-        "\u00b7": ".",      # middle dot
-        "\u221a": "sqrt",   # square root
-        "\u2265": ">=",     # greater or equal
-        "\u2264": "<=",     # less or equal
-        "\u00b1": "+/-",    # plus-minus
-        "\u221e": "inf",    # infinity
-        "\u2192": "->",     # right arrow
-        "\u00b0": "deg",    # degree sign
-        "\u2018": "'",      # left single quote
-        "\u2019": "'",      # right single quote
-        "\u201c": '"',      # left double quote
-        "\u201d": '"',      # right double quote
-        "\u2022": "*",      # bullet
+        "\u2014": "-",      "\u2013": "-",      "\u2212": "-",
+        "\u0394": "Delta",  "\u03c1": "rho",    "\u03c3": "sigma",
+        "\u03b7": "eta",    "\u03b3": "gamma",  "\u03bc": "mu",
+        "\u03bd": "nu",     "\u03c6": "phi",    "\u03c0": "pi",
+        "\u03b1": "alpha",  "\u03b2": "beta",   "\u03b5": "eps",
+        "\u03ba": "kappa",  "\u03c9": "omega",  "\u03a9": "Omega",
+        "\u03a3": "Sigma",
+        "\u2080": "0",      "\u2081": "1",      "\u2082": "2",
+        "\u2083": "3",      "\u2084": "4",
+        "\u00b2": "2",      "\u00b3": "3",      "\u00b9": "1",
+        "\u00d7": "x",      "\u00b7": ".",      "\u221a": "sqrt",
+        "\u2265": ">=",     "\u2264": "<=",     "\u00b1": "+/-",
+        "\u221e": "inf",    "\u2192": "->",     "\u00b0": "deg",
+        "\u2018": "'",      "\u2019": "'",
+        "\u201c": '"',      "\u201d": '"',
+        "\u2022": "*",
     }
-
     for char, replacement in replacements.items():
         text = text.replace(char, replacement)
-
-    # Final safety: drop anything still outside Latin-1
     return text.encode("latin-1", errors="replace").decode("latin-1")
 
 
-# ---------------------------------------------------------------------------
-# NONE-SAFE NUMBER FORMATTER
-# ---------------------------------------------------------------------------
-
 def _fmt(value: Optional[float], decimals: int = 3) -> str:
-    """Format a float for PDF output. Returns '-' when value is None."""
+    """Format a float for PDF output. Returns '-' when None."""
     if value is None:
         return "-"
     return f"{value:.{decimals}f}"
+
+
+# ---------------------------------------------------------------------------
+# MATPLOTLIB CHART GENERATORS  (return BytesIO PNG or None on failure)
+# ---------------------------------------------------------------------------
+
+def _mpl():
+    """Import matplotlib with Agg (non-GUI) backend."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    plt.rcParams.update({
+        "font.family":    "sans-serif",
+        "font.size":      8,
+        "axes.titlesize": 9,
+        "axes.labelsize": 8,
+        "axes.grid":      True,
+        "grid.alpha":     0.3,
+        "figure.dpi":     150,
+    })
+    return plt
+
+
+def _save_png(fig) -> io.BytesIO:
+    """Save a matplotlib figure to a BytesIO PNG buffer."""
+    import matplotlib.pyplot as plt
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight",
+                facecolor="white")
+    plt.close(fig)
+    buf.seek(0)
+    return buf
+
+
+def _chart_cv_curve(
+    Cv_rated: float,
+    Cv_required: float,
+    opening_pct: Optional[float],
+    R_inherent: float = 50.0,
+) -> Optional[io.BytesIO]:
+    """Cv characteristic curve with operating point marker."""
+    try:
+        import numpy as np
+        plt = _mpl()
+        fig, ax = plt.subplots(figsize=(6.0, 3.0))
+
+        x    = np.linspace(0, 100, 201)
+        Cmin = Cv_rated / max(R_inherent, 1.0)
+
+        # Three curves
+        ep  = Cmin * (Cv_rated / Cmin) ** (x / 100)
+        lin = Cmin + (Cv_rated - Cmin) * x / 100
+        qo  = np.where(x > 0, Cv_rated * np.sqrt(x / 100), 0)
+
+        ax.plot(x, ep,  color="#1B6CA8", lw=2.0, label="Equal Percentage")
+        ax.plot(x, lin, color="#198754", lw=1.2, ls="--", alpha=0.7, label="Linear")
+        ax.plot(x, qo,  color="#fd7e14", lw=1.2, ls=":",  alpha=0.7, label="Quick Opening")
+
+        # Controllable zone band
+        ax.axvspan(10, 90, alpha=0.06, color="#198754", zorder=0)
+        ax.text(50, Cv_rated * 0.04, "Controllable zone (10-90%)",
+                ha="center", va="bottom", fontsize=6.5, color="#198754")
+
+        # Operating point
+        if Cv_required and opening_pct is not None:
+            ax.scatter([opening_pct], [Cv_required],
+                       color="#dc3545", s=70, zorder=5,
+                       marker="D", label=f"Op. Point  Cv={Cv_required:.1f}")
+            ax.annotate(
+                f"  Cv={Cv_required:.1f}",
+                xy=(opening_pct, Cv_required),
+                fontsize=7.5, color="#dc3545", va="center",
+            )
+
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, Cv_rated * 1.08)
+        ax.set_xlabel("Valve Opening [%]")
+        ax.set_ylabel("Cv [-]")
+        ax.set_title("Inherent Flow Characteristic Curves")
+        ax.legend(loc="upper left", fontsize=7, framealpha=0.8)
+        fig.tight_layout()
+        return _save_png(fig)
+    except Exception:
+        return None
+
+
+def _chart_sizing_gauge(
+    sizing_ratio: float,
+    Cv_required: float,
+    Cv_rated: float,
+) -> Optional[io.BytesIO]:
+    """Horizontal gauge bar showing sizing ratio with zone colouring."""
+    try:
+        plt = _mpl()
+        fig, ax = plt.subplots(figsize=(5.0, 1.4))
+
+        pct = min(sizing_ratio * 100, 120)
+
+        # Zone backgrounds
+        zones = [
+            (0,   20,  "#fde8e8"),   # red: too small
+            (20,  60,  "#fff3cd"),   # yellow: oversized
+            (60,  85,  "#d4edda"),   # green: optimal
+            (85,  100, "#fff3cd"),   # yellow: near capacity
+            (100, 120, "#fde8e8"),   # red: undersized
+        ]
+        for lo, hi, col in zones:
+            ax.barh(0, hi - lo, left=lo, height=0.55,
+                    color=col, alpha=0.9, zorder=1)
+
+        # Value bar
+        bar_col = (
+            "#198754" if 60 <= pct <= 85
+            else "#fd7e14" if 20 < pct < 100
+            else "#dc3545"
+        )
+        ax.barh(0, pct, height=0.35, color=bar_col, alpha=0.95, zorder=2)
+
+        # Zone boundary lines
+        for v, lbl in [(60, "60%"), (85, "85%"), (100, "100%")]:
+            ax.axvline(v, color="gray", lw=0.8, ls="--", zorder=3)
+            ax.text(v, 0.42, lbl, ha="center", va="bottom",
+                    fontsize=6, color="gray")
+
+        ax.set_xlim(0, 120)
+        ax.set_ylim(-0.5, 0.7)
+        ax.set_yticks([])
+        ax.set_xlabel("Sizing Ratio [%]")
+        ax.set_title(
+            f"Sizing Ratio: {pct:.1f}%   "
+            f"(Cv {Cv_required:.1f} / {Cv_rated:.1f})   "
+            f"Optimal: 60-85%",
+            fontsize=8,
+        )
+        fig.tight_layout()
+        return _save_png(fig)
+    except Exception:
+        return None
+
+
+def _chart_pressure_profile(
+    P1: float,
+    P_vc: float,
+    P2: float,
+    Pv: float,
+) -> Optional[io.BytesIO]:
+    """Horizontal bar chart showing P1, Pvc, P2 vs Pv threshold."""
+    try:
+        plt = _mpl()
+        fig, ax = plt.subplots(figsize=(6.5, 2.0))
+
+        labels  = ["P1 (Inlet)", "Pvc (Vena Contracta)", "P2 (Outlet)"]
+        values  = [max(v, 0.0) for v in [P1, P_vc, P2]]
+        colours = ["#1B6CA8", "#fd7e14", "#198754"]
+
+        bars = ax.barh(labels, values, color=colours, alpha=0.85, height=0.5)
+
+        for bar, raw_val in zip(bars, [P1, P_vc, P2]):
+            bw = bar.get_width()
+            ax.text(
+                bw * 0.5, bar.get_y() + bar.get_height() / 2,
+                f"{raw_val:.3f} bar",
+                ha="center", va="center",
+                color="white", fontweight="bold", fontsize=8,
+            )
+
+        ax.axvline(Pv, color="#dc3545", ls="--", lw=1.5,
+                   label=f"Pv = {Pv:.4f} bar")
+
+        ax.set_xlabel("Absolute Pressure [bar]")
+        ax.set_title("Pressure Profile Through Valve")
+        ax.legend(fontsize=7.5, loc="lower right")
+        ax.set_xlim(left=0)
+        fig.tight_layout()
+        return _save_png(fig)
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# CHART PAGE EMBEDDER
+# ---------------------------------------------------------------------------
+
+def _embed_chart_page(pdf, result: SizingResult) -> None:
+    """Add a CHARTS section to the PDF with embedded PNG images.
+
+    Embeds up to three charts:
+      1. Cv Characteristic Curve     (always, when Cv_rated can be derived)
+      2. Sizing Ratio Gauge          (always, when sizing_ratio available)
+      3. Pressure Profile Through Valve  (liquid only)
+
+    Each chart is wrapped in try-except so a single failure never
+    prevents the rest of the PDF from generating.
+    """
+    has_sizing = (
+        result.Cv_required is not None
+        and result.sizing_ratio is not None
+        and result.sizing_ratio > 0
+    )
+
+    if not has_sizing and result.fluid_phase != FluidPhase.LIQUID:
+        return   # nothing to draw
+
+    pdf.section_title("CHARTS")
+
+    if has_sizing:
+        Cv_rated_est = result.Cv_required / result.sizing_ratio
+
+        # ── Row 1: Cv curve (left 64%) + Sizing gauge (right 34%) ────────
+        y0     = pdf.get_y()
+        w_cv   = pdf.epw * 0.64
+        w_gau  = pdf.epw * 0.34
+        gap    = pdf.epw - w_cv - w_gau   # 2% gap
+
+        cv_buf = _chart_cv_curve(
+            Cv_rated_est,
+            result.Cv_required,
+            result.opening_pct,
+        )
+        if cv_buf:
+            # aspect of figsize(6, 3) → height = width × (3/6)
+            h_cv = w_cv * (3.0 / 6.0)
+            pdf.image(
+                cv_buf,
+                x=pdf.l_margin,
+                y=y0,
+                w=w_cv,
+            )
+        else:
+            h_cv = 0
+
+        ga_buf = _chart_sizing_gauge(
+            result.sizing_ratio,
+            result.Cv_required,
+            Cv_rated_est,
+        )
+        if ga_buf:
+            # aspect of figsize(5, 1.4) → height = width × (1.4/5)
+            h_ga = w_gau * (1.4 / 5.0)
+            pdf.image(
+                ga_buf,
+                x=pdf.l_margin + w_cv + gap,
+                y=y0,
+                w=w_gau,
+            )
+        else:
+            h_ga = 0
+
+        # Move y past the taller of the two images
+        pdf.set_y(y0 + max(h_cv, h_ga) + 5)
+
+    # ── Row 2: Pressure profile (liquid, full width) ──────────────────────
+    if (
+        result.fluid_phase == FluidPhase.LIQUID
+        and result.cavitation is not None
+        and result.P1_bar is not None
+        and result.P2_bar is not None
+    ):
+        cav = result.cavitation
+        # Derive Pv from sigma: sigma = (P1-Pv)/(P1-P2)
+        delta_P = result.P1_bar - result.P2_bar
+        Pv_est  = result.P1_bar - cav.sigma * delta_P if delta_P > 0 else 0.0
+
+        pr_buf = _chart_pressure_profile(
+            result.P1_bar,
+            cav.P_vc,
+            result.P2_bar,
+            Pv_est,
+        )
+        if pr_buf:
+            pdf.set_x(pdf.l_margin)
+            # aspect of figsize(6.5, 2) → height = width × (2/6.5)
+            pdf.image(pr_buf, x=pdf.l_margin, w=pdf.epw)
+            pdf.ln(5)
+
+    pdf.ln(2)
 
 
 # ---------------------------------------------------------------------------
@@ -96,11 +338,6 @@ def _fmt(value: Optional[float], decimals: int = 3) -> str:
 def build_pdf_bytes(result: SizingResult) -> bytes:
     """Generate an engineering sizing report as PDF bytes.
 
-    Uses fpdf2 2.7.6+ API throughout:
-      - new_x / new_y instead of deprecated ln parameter
-      - Explicit set_x(l_margin) before every row to prevent x drift
-      - self.epw (effective page width) for all cell widths
-
     Returns
     -------
     bytes
@@ -109,20 +346,15 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
     try:
         from fpdf import FPDF
     except ImportError:
-        raise ImportError(
-            "fpdf2 is required. Run: pip install fpdf2>=2.7.6"
-        )
+        raise ImportError("fpdf2 is required. Run: pip install fpdf2>=2.7.6")
 
     class _Report(FPDF):
-        """Custom FPDF subclass with engineering report styling."""
 
         def header(self) -> None:
-            """Blue header bar rendered on every page."""
             self.set_fill_color(27, 108, 168)
             self.rect(0, 0, 210, 16, "F")
             self.set_font("Helvetica", "B", 13)
             self.set_text_color(255, 255, 255)
-            # Explicit x reset after rect() call
             self.set_x(self.l_margin)
             self.cell(
                 self.epw, 16,
@@ -134,28 +366,23 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
             self.set_text_color(0, 0, 0)
 
         def footer(self) -> None:
-            """Page number footer at bottom of every page."""
             self.set_y(-12)
-            # set_y() resets x in some fpdf2 versions but not all — be explicit
             self.set_x(self.l_margin)
             self.set_font("Helvetica", "I", 8)
             self.set_text_color(120, 120, 120)
-            footer_text = (
-                f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')} UTC"
-                "   |   Standard: IEC 60534-2-1:2011 / ISA-75.01.01-2012"
-                f"   |   Page {self.page_no()}"
-            )
             self.cell(
                 self.epw, 10,
-                footer_text,
+                (
+                    f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')} UTC"
+                    "   |   IEC 60534-2-1:2011 / ISA-75.01.01-2012"
+                    f"   |   Page {self.page_no()}"
+                ),
                 align="C",
                 new_x="LMARGIN",
                 new_y="NEXT",
             )
 
         def section_title(self, title: str) -> None:
-            """Blue section header bar."""
-            # Always start from left margin
             self.set_x(self.l_margin)
             self.set_fill_color(27, 108, 168)
             self.set_text_color(255, 255, 255)
@@ -171,50 +398,30 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
             self.ln(2)
 
         def data_row(self, label: str, value: str, unit: str = "") -> None:
-            """Render one labelled data row.
-
-            Key fpdf2 2.7.6+ changes applied here:
-              1. self.set_x(self.l_margin) resets x before each row
-              2. new_x / new_y instead of ln=True on the last cell
-              3. Column widths computed from self.epw (never hardcoded)
-            """
-            safe_label = _pdf_safe(label)
-            safe_value = _pdf_safe(value)
-            safe_unit  = _pdf_safe(unit)
-
-            # CRITICAL: reset x to left margin before rendering row
             self.set_x(self.l_margin)
-
-            # Column widths as fractions of effective page width
             epw  = self.epw
-            col1 = epw * 0.44   # label
-            col2 = epw * 0.34   # value
-            col3 = epw - col1 - col2  # unit (fills remainder, never overflows)
+            col1 = epw * 0.44
+            col2 = epw * 0.34
+            col3 = epw - col1 - col2
 
             even = (int(self.get_y()) // 6) % 2 == 0
             self.set_fill_color(248, 249, 250)
 
-            # Label column
             self.set_font("Helvetica", "", 9)
             self.set_text_color(0, 0, 0)
-            self.cell(col1, 6, safe_label, border="B", fill=even)
+            self.cell(col1, 6, _pdf_safe(label), border="B", fill=even)
 
-            # Value column
             self.set_font("Helvetica", "B", 9)
             self.set_text_color(27, 108, 168)
-            self.cell(col2, 6, safe_value, border="B", fill=even)
+            self.cell(col2, 6, _pdf_safe(value), border="B", fill=even)
 
-            # Unit column — use new_x/new_y (NOT ln=True, removed in fpdf2 2.7.6)
             self.set_text_color(100, 100, 100)
             self.set_font("Helvetica", "I", 9)
             self.cell(
-                col3, 6, safe_unit,
-                border="B",
-                fill=even,
-                new_x="LMARGIN",
-                new_y="NEXT",
+                col3, 6, _pdf_safe(unit),
+                border="B", fill=even,
+                new_x="LMARGIN", new_y="NEXT",
             )
-
             self.set_text_color(0, 0, 0)
 
     # ── Build document ─────────────────────────────────────────────────────
@@ -223,16 +430,13 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
-    # Subtitle block
+    # Subtitle
     pdf.set_x(pdf.l_margin)
     pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(100, 100, 100)
     pdf.cell(
         pdf.epw, 6,
-        (
-            f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-            "  |  Revision: A  |  Status: Preliminary"
-        ),
+        f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}  |  Revision: A  |  Status: Preliminary",
         align="C",
         new_x="LMARGIN",
         new_y="NEXT",
@@ -289,7 +493,7 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
         pdf.data_row("xTP (with fittings)", _fmt(result.xTP, 4),           "[-]")
     pdf.ln(4)
 
-    # ── Section 4: Cavitation Analysis ────────────────────────────────────
+    # ── Section 4: Cavitation ─────────────────────────────────────────────
     if result.cavitation:
         cav = result.cavitation
         pdf.section_title("4. CAVITATION / FLASHING ANALYSIS (IEC 60534-8-4)")
@@ -303,7 +507,7 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
         pdf.data_row("Is Flashing",         str(cav.is_flashing),          "")
         pdf.ln(4)
 
-    # ── Section 5: Noise Prediction ───────────────────────────────────────
+    # ── Section 5: Noise ──────────────────────────────────────────────────
     if result.noise:
         noise = result.noise
         pdf.section_title("5. NOISE PREDICTION (IEC 60534-8-3 / 8-4)")
@@ -316,13 +520,11 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
         pdf.data_row("Exceeds Site Limit",  str(noise.exceeds_limit),      "")
         pdf.ln(4)
 
-    # ── Section 6: Engineering Messages ───────────────────────────────────
+    # ── Section 6: Engineering Warnings ───────────────────────────────────
     if result.messages:
         pdf.section_title("6. ENGINEERING WARNINGS AND NOTES")
         for msg in result.messages:
-            # Always reset x before each message row
             pdf.set_x(pdf.l_margin)
-
             level_str = f"[{msg.level.value.upper()}]"
 
             if msg.level.value == "error":
@@ -333,19 +535,20 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
                 pdf.set_text_color(13, 110, 253)
 
             pdf.set_font("Helvetica", "B", 9)
-            # cell() without new_x/new_y moves x right (default behaviour)
             pdf.cell(32, 6, level_str)
 
             pdf.set_text_color(0, 0, 0)
             pdf.set_font("Helvetica", "", 9)
-            # Use explicit remaining width — NOT w=0 — to avoid width calculation issues
-            remaining_w = pdf.epw - 32
             pdf.multi_cell(
-                remaining_w, 6,
+                pdf.epw - 32, 6,
                 f"{_pdf_safe(msg.code)}  {_pdf_safe(msg.message)}",
                 new_x="LMARGIN",
                 new_y="NEXT",
             )
+
+    # ── CHARTS (new page for clean layout) ────────────────────────────────
+    pdf.add_page()
+    _embed_chart_page(pdf, result)
 
     return bytes(pdf.output())
 
@@ -355,25 +558,14 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
 # ---------------------------------------------------------------------------
 
 def build_excel_bytes(result: SizingResult) -> bytes:
-    """Generate a structured Excel workbook.
-
-    Excel handles Unicode natively so _pdf_safe() is not needed here.
-
-    Returns
-    -------
-    bytes
-        Raw .xlsx bytes for st.download_button().
-    """
+    """Generate a structured Excel workbook with sizing results."""
     try:
         import openpyxl
         from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
     except ImportError:
-        raise ImportError(
-            "openpyxl is required. Run: pip install openpyxl>=3.1.4"
-        )
+        raise ImportError("openpyxl is required.")
 
     wb = openpyxl.Workbook()
-
     hdr_font    = Font(bold=True, color="FFFFFF", size=10)
     hdr_fill    = PatternFill("solid", fgColor="1B6CA8")
     val_font    = Font(bold=True, color="1B6CA8", size=10)
@@ -382,27 +574,21 @@ def build_excel_bytes(result: SizingResult) -> bytes:
     center      = Alignment(horizontal="center", vertical="center")
 
     def write_section(ws, row: int, title: str) -> int:
-        cell           = ws.cell(row=row, column=1, value=title)
-        cell.font      = hdr_font
-        cell.fill      = hdr_fill
+        cell = ws.cell(row=row, column=1, value=title)
+        cell.font = hdr_font
+        cell.fill = hdr_fill
         cell.alignment = center
-        ws.merge_cells(
-            start_row=row, start_column=1,
-            end_row=row,   end_column=3,
-        )
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
         return row + 1
 
     def write_row(ws, row: int, label: str, value: str, unit: str = "") -> int:
         ws.cell(row=row, column=1, value=label).font = lbl_font
         ws.cell(row=row, column=2, value=value).font = val_font
-        ws.cell(row=row, column=3, value=unit).font  = Font(
-            color="6C757D", italic=True
-        )
+        ws.cell(row=row, column=3, value=unit).font  = Font(color="6C757D", italic=True)
         for col in range(1, 4):
             ws.cell(row=row, column=col).border = thin_border
         return row + 1
 
-    # Sheet 1: Sizing Results
     ws1 = wb.active
     ws1.title = "Sizing Results"
     ws1.column_dimensions["A"].width = 38
@@ -410,98 +596,84 @@ def build_excel_bytes(result: SizingResult) -> bytes:
     ws1.column_dimensions["C"].width = 22
 
     r = 1
-    title_cell = ws1.cell(r, 1, "CONTROL VALVE SIZING REPORT")
-    title_cell.font = Font(bold=True, size=14, color="1B6CA8")
+    tc = ws1.cell(r, 1, "CONTROL VALVE SIZING REPORT")
+    tc.font = Font(bold=True, size=14, color="1B6CA8")
     ws1.merge_cells(start_row=r, start_column=1, end_row=r, end_column=3)
     r += 1
     ws1.cell(r, 1,
              f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}").font = Font(
-        color="6C757D", size=9
-    )
+        color="6C757D", size=9)
     r += 2
 
     r = write_section(ws1, r, "PRIMARY RESULTS")
-    r = write_row(ws1, r, "Cv Required",            _fmt(result.Cv_required),   "\u2014")
-    r = write_row(ws1, r, "Cv Design (with margin)",_fmt(result.Cv_design),     "\u2014")
-    r = write_row(ws1, r, "Kv Required",            _fmt(result.Kv_required),   "m\u00b3/h/bar^0.5")
+    r = write_row(ws1, r, "Cv Required",
+                  _fmt(result.Cv_required),         "\u2014")
+    r = write_row(ws1, r, "Cv Design (with margin)",
+                  _fmt(result.Cv_design),            "\u2014")
+    r = write_row(ws1, r, "Kv Required",
+                  _fmt(result.Kv_required),          "m\u00b3/h/bar^0.5")
     r = write_row(ws1, r, "Sizing Ratio",
-                  f"{result.sizing_ratio*100:.1f}%" if result.sizing_ratio else "\u2014",
-                  "\u2014")
-    r = write_row(ws1, r, "Estimated Opening %",
-                  f"{result.opening_pct:.1f}%" if result.opening_pct else "\u2014",
-                  "%")
+                  f"{result.sizing_ratio*100:.1f}%"
+                  if result.sizing_ratio else "\u2014",  "\u2014")
+    r = write_row(ws1, r, "Opening %",
+                  f"{result.opening_pct:.1f}%"
+                  if result.opening_pct else "\u2014",    "%")
     r = write_row(ws1, r, "Downstream Velocity",
-                  _fmt(result.velocity_ms, 2) if result.velocity_ms else "\u2014",
-                  "m/s")
+                  _fmt(result.velocity_ms, 2)
+                  if result.velocity_ms else "\u2014",    "m/s")
     r += 1
 
     r = write_section(ws1, r, "PROCESS CONDITIONS (SI)")
-    r = write_row(ws1, r, "Inlet Pressure P1",  _fmt(result.P1_bar, 4),   "bar abs")
-    r = write_row(ws1, r, "Outlet Pressure P2",  _fmt(result.P2_bar, 4),  "bar abs")
+    r = write_row(ws1, r, "Inlet Pressure P1",
+                  _fmt(result.P1_bar, 4),            "bar abs")
+    r = write_row(ws1, r, "Outlet Pressure P2",
+                  _fmt(result.P2_bar, 4),            "bar abs")
     r = write_row(ws1, r, "Inlet Temperature T1",
-                  _fmt(result.T1_K - 273.15 if result.T1_K else None, 1), "\u00b0C")
-    r = write_row(ws1, r, "Mass Flow W",         _fmt(result.W_kgh, 3),   "kg/h")
+                  _fmt(result.T1_K - 273.15 if result.T1_K else None, 1),
+                  "\u00b0C")
+    r = write_row(ws1, r, "Mass Flow W",
+                  _fmt(result.W_kgh, 3),             "kg/h")
     r = write_row(ws1, r, "Inlet Density \u03c1\u2081",
-                  _fmt(result.rho1_kgm3, 4), "kg/m\u00b3")
+                  _fmt(result.rho1_kgm3, 4),         "kg/m\u00b3")
     r += 1
 
     r = write_section(ws1, r, "INTERMEDIATE VALUES")
-    r = write_row(ws1, r, "Piping Factor Fp",    _fmt(result.Fp, 4),      "\u2014")
-    r = write_row(ws1, r, "FF Factor",           _fmt(result.FF, 4),      "\u2014")
-    r = write_row(ws1, r, "\u0394P max",         _fmt(result.delta_P_max_bar, 4), "bar")
-    r = write_row(ws1, r, "Expansion Factor Y",  _fmt(result.Y, 4),       "\u2014")
-    r = write_row(ws1, r, "Reynolds Number Rev",
-                  _fmt(result.Rev, 0) if result.Rev else "\u2014",        "\u2014")
-    r = write_row(ws1, r, "FR Factor",           _fmt(result.FR, 4),      "\u2014")
+    r = write_row(ws1, r, "Piping Factor Fp",   _fmt(result.Fp, 4),  "\u2014")
+    r = write_row(ws1, r, "FF Factor",          _fmt(result.FF, 4),  "\u2014")
+    r = write_row(ws1, r, "\u0394P max",        _fmt(result.delta_P_max_bar, 4), "bar")
+    r = write_row(ws1, r, "Expansion Factor Y", _fmt(result.Y, 4),   "\u2014")
+    r = write_row(ws1, r, "Reynolds Rev",
+                  _fmt(result.Rev, 0) if result.Rev else "\u2014",   "\u2014")
+    r = write_row(ws1, r, "FR Factor",          _fmt(result.FR, 4),  "\u2014")
     r += 1
 
-    # Sheet 2: Cavitation
     if result.cavitation:
+        cav = result.cavitation
         ws2 = wb.create_sheet("Cavitation Analysis")
         ws2.column_dimensions["A"].width = 38
         ws2.column_dimensions["B"].width = 22
         ws2.column_dimensions["C"].width = 22
-        cav = result.cavitation
-        r2  = write_section(ws2, 1, "CAVITATION ANALYSIS (IEC 60534-8-4)")
-        r2  = write_row(ws2, r2, "Cavitation Regime",
-                        cav.regime.value.upper(),           "")
-        r2  = write_row(ws2, r2, "Sigma \u03c3",
-                        _fmt(cav.sigma, 4),                 "\u2014")
-        r2  = write_row(ws2, r2, "Vena Contracta Pvc",
-                        _fmt(cav.P_vc, 4),                  "bar abs")
-        r2  = write_row(ws2, r2, "\u0394P Incipient",
-                        _fmt(cav.delta_P_incipient, 4),     "bar")
-        r2  = write_row(ws2, r2, "\u0394P Max",
-                        _fmt(cav.delta_P_max, 4),           "bar")
-        r2  = write_row(ws2, r2, "Is Choked",
-                        str(cav.is_choked),                 "")
-        r2  = write_row(ws2, r2, "Is Flashing",
-                        str(cav.is_flashing),               "")
+        r2 = write_section(ws2, 1, "CAVITATION ANALYSIS (IEC 60534-8-4)")
+        r2 = write_row(ws2, r2, "Regime",    cav.regime.value.upper(), "")
+        r2 = write_row(ws2, r2, "Sigma",     _fmt(cav.sigma, 4),       "\u2014")
+        r2 = write_row(ws2, r2, "Pvc",       _fmt(cav.P_vc, 4),        "bar abs")
+        r2 = write_row(ws2, r2, "\u0394P_i", _fmt(cav.delta_P_incipient, 4), "bar")
+        r2 = write_row(ws2, r2, "\u0394P_max",_fmt(cav.delta_P_max, 4),"bar")
 
-    # Sheet 3: Noise
     if result.noise:
+        noise = result.noise
         ws3 = wb.create_sheet("Noise Analysis")
         ws3.column_dimensions["A"].width = 38
         ws3.column_dimensions["B"].width = 22
         ws3.column_dimensions["C"].width = 22
-        noise = result.noise
-        r3    = write_section(ws3, 1, "NOISE PREDICTION (IEC 60534-8-3/8-4)")
-        r3    = write_row(ws3, r3, "External SPL Lpe",
-                          f"{noise.Lpe_dba:.1f}",           "dBA at 1 m")
-        r3    = write_row(ws3, r3, "Internal LWi",
-                          f"{noise.LWi_db:.1f}",            "dB re 1 pW")
-        r3    = write_row(ws3, r3, "Pipe Wall TL",
-                          f"{noise.TL_db:.1f}",             "dB")
-        r3    = write_row(ws3, r3, "Peak Frequency f_p",
-                          f"{noise.f_peak_hz:.0f}",         "Hz")
-        r3    = write_row(ws3, r3, "Acoustic Eff. \u03b7",
-                          f"{noise.eta:.2e}",               "\u2014")
-        r3    = write_row(ws3, r3, "Flow Regime",
-                          noise.regime,                     "")
-        r3    = write_row(ws3, r3, "Exceeds Limit",
-                          str(noise.exceeds_limit),         "")
+        r3 = write_section(ws3, 1, "NOISE PREDICTION (IEC 60534-8-3/8-4)")
+        r3 = write_row(ws3, r3, "Lpe", f"{noise.Lpe_dba:.1f}", "dBA at 1 m")
+        r3 = write_row(ws3, r3, "LWi", f"{noise.LWi_db:.1f}",  "dB re 1 pW")
+        r3 = write_row(ws3, r3, "TL",  f"{noise.TL_db:.1f}",   "dB")
+        r3 = write_row(ws3, r3, "f_p", f"{noise.f_peak_hz:.0f}", "Hz")
+        r3 = write_row(ws3, r3, "eta", f"{noise.eta:.2e}",       "\u2014")
+        r3 = write_row(ws3, r3, "Regime", noise.regime,          "")
 
-    # Sheet 4: Warnings
     if result.messages:
         ws4 = wb.create_sheet("Warnings")
         ws4.column_dimensions["A"].width = 12
@@ -531,27 +703,22 @@ def render_report_panel(result: SizingResult) -> None:
         st.info("Run a successful calculation to generate a report.")
         return
 
-    st.markdown(
-        section_header_html("Export Sizing Report"),
-        unsafe_allow_html=True,
-    )
+    st.markdown(section_header_html("Export Sizing Report"), unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
 
     with col1:
         st.markdown("#### PDF Report")
         st.caption(
-            "Professional engineering sizing report including all inputs, "
-            "results, intermediate values, cavitation analysis, noise "
-            "prediction, and engineering warnings."
+            "Engineering sizing report with data tables and embedded charts "
+            "(Cv curve, sizing ratio gauge, pressure profile)."
         )
         try:
             pdf_bytes = build_pdf_bytes(result)
-            fname = f"valve_sizing_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
             st.download_button(
                 label="Download PDF Report",
                 data=pdf_bytes,
-                file_name=fname,
+                file_name=f"valve_sizing_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
                 mime="application/pdf",
                 use_container_width=True,
             )
@@ -568,11 +735,10 @@ def render_report_panel(result: SizingResult) -> None:
         )
         try:
             xlsx_bytes = build_excel_bytes(result)
-            fname = f"valve_sizing_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
             st.download_button(
                 label="Download Excel Workbook",
                 data=xlsx_bytes,
-                file_name=fname,
+                file_name=f"valve_sizing_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
                 mime=(
                     "application/vnd.openxmlformats-officedocument"
                     ".spreadsheetml.sheet"
@@ -585,10 +751,7 @@ def render_report_panel(result: SizingResult) -> None:
             st.error(f"Excel generation failed: {exc}")
 
     st.divider()
-    st.markdown(
-        section_header_html("Report Contents"),
-        unsafe_allow_html=True,
-    )
+    st.markdown(section_header_html("Report Contents"), unsafe_allow_html=True)
     st.markdown("""
 | Section | Content |
 |---|---|
@@ -598,4 +761,5 @@ def render_report_panel(result: SizingResult) -> None:
 | **4. Cavitation Analysis** | Regime, sigma, Pvc, dP_incipient, dP_max (liquid only) |
 | **5. Noise Prediction** | Lpe, LWi, TL, f_peak, eta, regime |
 | **6. Engineering Warnings** | All constraint messages with codes and severity |
+| **Charts (page 2)** | Cv characteristic curve, sizing ratio gauge, pressure profile |
     """)
