@@ -197,39 +197,39 @@ def build_pdf_bytes(result: SizingResult) -> bytes:
             self.ln(2)
 
         def data_row(self, label: str, value: str, unit: str = "") -> None:
-            """
-            Render one labelled data row.
+            """Render one labelled data row with _pdf_safe applied to all fields.
 
-            _pdf_safe() is applied to ALL three fields here — this means
-            build_pdf_bytes() can pass raw engineering strings (with Greek
-            letters, em dashes, superscripts, etc.) and they will always
-            be sanitised before hitting the font renderer.
+            Uses self.epw (effective page width) so column widths are always
+            computed from actual usable space rather than hardcoded values.
+            This prevents 'Not enough horizontal space' in fpdf2 2.8+.
             """
             safe_label = _pdf_safe(label)
             safe_value = _pdf_safe(value)
             safe_unit  = _pdf_safe(unit)
 
+            # Compute columns as fractions of actual usable page width
+            epw   = self.epw          # effective page width = page - left - right margin
+            col1  = epw * 0.44        # 44% for label
+            col2  = epw * 0.34        # 34% for value
+            col3  = epw - col1 - col2 # remainder for unit (never overflows)
+
             even = (int(self.get_y()) // 6) % 2 == 0
             self.set_fill_color(248, 249, 250)
 
-            # Label column
             self.set_font("Helvetica", "", 9)
             self.set_text_color(0, 0, 0)
-            self.cell(80, 6, safe_label, border="B", fill=even)
+            self.cell(col1, 6, safe_label, border="B", fill=even)
 
-            # Value column (blue, bold)
             self.set_font("Helvetica", "B", 9)
             self.set_text_color(27, 108, 168)
-            self.cell(60, 6, safe_value, border="B", fill=even)
+            self.cell(col2, 6, safe_value, border="B", fill=even)
 
-            # Unit column (grey, italic)
             self.set_text_color(100, 100, 100)
             self.set_font("Helvetica", "I", 9)
-            self.cell(50, 6, safe_unit, border="B", fill=even, ln=True)
+            self.cell(col3, 6, safe_unit, border="B", fill=even, ln=True)
 
-            # Reset colour
             self.set_text_color(0, 0, 0)
-
+            
     # ── Build document ─────────────────────────────────────────────────────
     pdf = _Report()
     pdf.set_auto_page_break(auto=True, margin=18)
